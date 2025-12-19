@@ -54,36 +54,81 @@ export default function Home() {
   }
 
   const analyzeJson = async (json: any): Promise<void> => {
-    const dependencies = json.dependencies || {};
-      const devDependencies = json.devDependencies || {};
-      const allDeps = { ...dependencies, ...devDependencies };
+    setError(null)
+    setHtmlResponse("")
+
+    const dependencies = json.dependencies || {}
+    const devDependencies = json.devDependencies || {}
+    const allDeps = { ...dependencies, ...devDependencies }
 
     if (Object.keys(allDeps).length === 0) {
-        setError("No dependencies found in package.json.");
-        setIsLoading(false)
-        return;
+      setError("No dependencies found in package.json.")
+      return
+    }
+
+    const res = await fetch("https://api.byteshrink.dev/api/optimize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Model": "deepseek/deepseek-r1:free",
+      },
+      body: JSON.stringify({ dependencies, devDependencies }),
+    })
+
+    if (!res.ok || !res.body) {
+      throw new Error("API call failed.")
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let aggregatedContent = ""
+    let streamComplete = false
+    let bufferedLine = ""
+
+    const processLine = async (line: string) => {
+      if (!line.startsWith("data: ")) return false
+      const data = line.slice(6).trim()
+      if (!data) return false
+      if (data === "[DONE]") return true
+
+      try {
+        const parsed = JSON.parse(data)
+        if (parsed.content) {
+          aggregatedContent += parsed.content
+          const html = await marked.parse(aggregatedContent)
+          setHtmlResponse(html)
+        }
+      } catch (parseError) {
+        console.error("Failed to parse streaming chunk", parseError)
+      }
+      return false
+    }
+
+    while (!streamComplete) {
+      const { value, done } = await reader.read()
+      if (value) {
+        bufferedLine += decoder.decode(value, { stream: true })
       }
 
-      const res = await fetch('https://api.byteshrink.dev/api/optimize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Model': 'deepseek/deepseek-r1:free',
-        },
-        body: JSON.stringify({ dependencies: allDeps }),
-      });
+      const lines = bufferedLine.split("\n\n")
+      bufferedLine = lines.pop() || ""
 
-      if (!res.ok) {
-        throw new Error('API call failed.');
+      for (const line of lines) {
+        const shouldStop = await processLine(line)
+        if (shouldStop) {
+          streamComplete = true
+          break
+        }
       }
 
-      const data = await res.json();
-
-      if (data.error) {
-        throw new Error(data.error);
+      if (done || streamComplete) {
+        if (!streamComplete && bufferedLine) {
+          streamComplete = await processLine(bufferedLine)
+          bufferedLine = ""
+        }
+        break
       }
-
-      const html = await marked.parse(data.suggestions || '');
+    }
 /*
     // Simulate API call delay
     await new Promise((resolve) => setTimeout(resolve, 1500))
@@ -281,7 +326,7 @@ export default function Home() {
             )}
 
             {/* Results Display */}
-            {htmlResponse && !isLoading && !error && (
+            {htmlResponse && !error && (
               <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
