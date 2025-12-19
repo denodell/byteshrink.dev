@@ -129,39 +129,6 @@ export default function Home() {
         break
       }
     }
-/*
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Generate a sample HTML response based on JSON content
-    // In a real app, this would be an API call to your AI service
-    const keys = Object.keys(json)
-    const html = `
-      <div class="analysis-result">
-        <h2>🚀 JSON Analysis Results</h2>
-        <p>Analyzed ${keys.length} top-level keys in your JSON file.</p>
-        <ul>
-          ${keys.map((key) => `<li><strong>${key}</strong>: ${typeof json[key] === "object" ? "Object/Array" : typeof json[key]}</li>`).join("")}
-        </ul>
-        <h3>📊 Structure Overview</h3>
-        <p>Your JSON has a ${getJsonComplexity(json)} structure.</p>
-        <p>Total size: ${JSON.stringify(json).length} characters</p>
-        <div class="insight-box">
-          <h4>💡 AI Insights</h4>
-          <p>This JSON structure appears to be well-organized and follows standard conventions.</p>
-        </div>
-      </div>
-    `*/
-
-    setHtmlResponse(html)
-  }
-
-  const getJsonComplexity = (json: any): string => {
-    const str = JSON.stringify(json)
-    if (str.length > 10000) return "very complex"
-    if (str.length > 5000) return "complex"
-    if (str.length > 1000) return "moderate"
-    return "simple"
   }
 
   return (
