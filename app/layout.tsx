@@ -10,8 +10,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ByteShrink AI - JSON Analysis Tool",
-  description: "Analyze JSON files and generate insights with AI",
+  title: "ByteShrink — Trim your dependencies",
+  description:
+    "Upload your package.json to find heavy dependencies, outdated packages, and lighter alternatives.",
 }
 
 export default function RootLayout({
@@ -22,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           {children}
         </ThemeProvider>
         <Analytics />
